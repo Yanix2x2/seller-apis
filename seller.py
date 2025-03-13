@@ -12,7 +12,20 @@ logger = logging.getLogger(__file__)
 
 
 def get_product_list(last_id, client_id, seller_token):
-    """Получить список товаров магазина озон"""
+    """Получить список товаров с магазина озон.
+
+    Args:
+        last_id (str): id последнего продукта из предыдущего запроса.
+        client_id (str): id клиента необходимый для аутентификации запроса.
+        seller_token (str): Токен продавца для аутентификации запроса.
+
+    Return:
+        dict: Словарь, содержащий список продуктов.
+
+    Raises:
+        HTTPError: Ответ с кодом 4xx или 5xx.
+        ConnectionError: Проблемы подключения к серверу.
+    """
     url = "https://api-seller.ozon.ru/v2/product/list"
     headers = {
         "Client-Id": client_id,
@@ -32,7 +45,25 @@ def get_product_list(last_id, client_id, seller_token):
 
 
 def get_offer_ids(client_id, seller_token):
-    """Получить артикулы товаров магазина озон"""
+    """Получить артикулы товаров магазина озон.
+
+    Args:
+        client_id (str): id клиента необходимый для аутентификации запроса.
+        seller_token (str): Токен продавца для аутентификации запроса.
+
+    Return:
+        list: Список ids из магазина ozon.
+
+    Raises:
+        HTTPError: Ответ с кодом 4xx или 5xx.
+        ConnectionError: Проблемы подключения к серверу.
+
+    Examples:
+        >>> seller_token = env.str("SELLER_TOKEN")
+        >>> client_id = env.str("CLIENT_ID")
+        >>> get_offer_ids(client_id, seller_token)
+        ['101', '102', '103']
+    """
     last_id = ""
     product_list = []
     while True:
@@ -49,7 +80,20 @@ def get_offer_ids(client_id, seller_token):
 
 
 def update_price(prices: list, client_id, seller_token):
-    """Обновить цены товаров"""
+    """Обновить цены товаров.
+
+    Args:
+        prices (list): Список цен на товары
+        client_id (str): id клиента необходимый для аутентификации запроса.
+        seller_token (str): Токен продавца для аутентификации запроса.
+    
+    Returns:
+        dict: Словарь с ответом api в формате json.
+
+    Raises:
+        HTTPError: Ответ с кодом 4xx или 5xx.
+        ConnectionError: Проблемы подключения к серверу.
+    """
     url = "https://api-seller.ozon.ru/v1/product/import/prices"
     headers = {
         "Client-Id": client_id,
@@ -62,7 +106,20 @@ def update_price(prices: list, client_id, seller_token):
 
 
 def update_stocks(stocks: list, client_id, seller_token):
-    """Обновить остатки"""
+    """Обновить остатки.
+
+    Args: 
+        stocks (list): Список остатков из магазина casio.
+        client_id (str): id клиента необходимый для аутентификации запроса.
+        seller_token (str): Токен продавца для аутентификации запроса.
+
+    Returns:
+        dict: Словарь с ответом api в формате json.
+
+    Raises:
+        HTTPError: Ответ с кодом 4xx или 5xx.
+        ConnectionError: Проблемы подключения к серверу.
+    """
     url = "https://api-seller.ozon.ru/v1/product/import/stocks"
     headers = {
         "Client-Id": client_id,
@@ -75,7 +132,31 @@ def update_stocks(stocks: list, client_id, seller_token):
 
 
 def download_stock():
-    """Скачать файл ostatki с сайта casio"""
+    """Скачать и обработать файл ostatki с сайта casio.
+
+    Делает запрос на сайт casio и качает оттуда
+    архив с информацией об остатках, записывается
+    в watch_remnants и архив удаляется.
+
+    Return:
+        list[dict]: Список словарей, где каждый словарь представляет собой 
+                    запись о товаре.
+
+    Raises:
+        HTTPError: Ответ с кодом 4xx или 5xx.
+        ConnectionError: Проблемы подключения к серверу.
+
+    Examples:
+        >>> download_stock()
+        [
+            {
+                'Код': '101', 
+                'Наименование товара': 'Часы_1',
+                'Цена': "5'990.00 руб.", 
+                'Количество': '5'
+            }
+        ]
+    """
     # Скачать остатки с сайта
     casio_url = "https://timeworld.ru/upload/files/ostatki.zip"
     session = requests.Session()
@@ -96,6 +177,44 @@ def download_stock():
 
 
 def create_stocks(watch_remnants, offer_ids):
+    """Создать список остатков.
+
+    Args:
+        watch_remnants (list[dict]): Список словарей с данными о часах.
+        offer_ids (list[str]): Список ids, для которых нужно создать остатки.
+
+    Return:
+        list[dict]: Список словарей с id и остатками товаров.
+
+    Examples:
+        Корректное исполнение:
+            >>> watch_remnants = 
+            [
+                {
+                    'Код': '101', 
+                    'Наименование товара': 'Часы_1',
+                    'Цена': "5'990.00 руб.", 
+                    'Количество': '5'
+                }
+            ]
+            >>> offer_ids = ['101']
+            >>> create_stocks(watch_remnants, offer_ids)
+            [{'offer_id': '101', 'stock': 5}]
+
+        Некорректное исполнение:
+             >>> watch_remnants = 
+            [
+                {
+                    'Код': '101', 
+                    'Наименование товара': 'Часы_1',
+                    'Цена': "5'990.00 руб.", 
+                    'Количество': 'null'
+                }
+            ]
+            >>> offer_ids = ['101']
+            >>> create_stocks(watch_remnants, offer_ids)
+            ValueError: invalid literal for int() with base 10: 'null'
+    """
     # Уберем то, что не загружено в seller
     stocks = []
     for watch in watch_remnants:
@@ -116,6 +235,40 @@ def create_stocks(watch_remnants, offer_ids):
 
 
 def create_prices(watch_remnants, offer_ids):
+    """Создает список цен для товаров, которые присутствуют в offer_ids.
+
+    Args:
+        watch_remnants (list[dict]): Список словарей с остатками товаров 
+                                     из магазине casio.
+        offer_ids (list[dict]): Список ids товаров из ozon, 
+                                для которых создаются цены.
+
+    Return:
+        list[dict]: Список словарей с информацией о ценах.
+
+    Examples:
+        Корректное исполнение:
+            >>> watch_remnants = [{'Код': '101', 'Цена': '5990'}]
+            >>> offer_ids = ['101']
+            >>> create_prices(watch_remnants, offer_ids)
+            [
+                {
+                    'auto_action_enabled': 'UNKNOWN', 
+                    'currency_code': 'RUB',
+                    'offer_id': '101',
+                    'old_price': '0', 
+                    'price': '5990'
+                }
+            ]
+
+        Некорректное исполнение:
+            >>> watch_remnants = [{'Код': '101', 'Цена': '5990'}]
+            >>> offer_ids = ['999']
+            >>> create_prices(watch_remnants, offer_ids)
+            []
+            (если ни один из товаров не найден в `offer_ids`, 
+            возвращается пустой список)
+    """
     prices = []
     for watch in watch_remnants:
         if str(watch.get("Код")) in offer_ids:
@@ -127,21 +280,72 @@ def create_prices(watch_remnants, offer_ids):
                 "price": price_conversion(watch.get("Цена")),
             }
             prices.append(price)
-    return prices
+    return prices 
 
 
 def price_conversion(price: str) -> str:
-    """Преобразовать цену. Пример: 5'990.00 руб. -> 5990"""
+    """Функция преобразовывает cтроку price в строку, состоящую только из цифр.
+
+    Args:
+        price (str): Строка, представляющая цену. Помимо цифр может содержать 
+                    символы валют, разделители.
+
+    Return:
+        str: Строка, содержащая только цифры.
+
+    Examples:
+        Корректное исполнение:
+            >>> price = "5'990.00 руб."
+            >>> price_conversion(pricе)
+            "5990"
+
+        Некорректное исполнение:
+            >>> price = "price"
+            >>> price_conversion(pricе)
+            ""
+            (если не переданы цифры, то код удалит всё и оставит пустую строку)
+
+    """
     return re.sub("[^0-9]", "", price.split(".")[0])
 
 
 def divide(lst: list, n: int):
-    """Разделить список lst на части по n элементов"""
+    """Разделить список на части по n элементов.
+
+    Args:
+        lst (list): Список, который нужно разделить.
+        n (int): По сколько элементов будет одна часть.
+
+    Returns:
+        lst: Одна часть списка собранного по n элементов.
+
+    Examples:
+        >>> lst = ['101', '102']
+        >>> n = 1
+        >>> divide(lst, n)
+        '101' 
+        >>> divide(lst, n)
+        '102'
+    """
     for i in range(0, len(lst), n):
         yield lst[i : i + n]
 
 
 async def upload_prices(watch_remnants, client_id, seller_token):
+    """Загружает и обновляет цены товаров в Ozon.
+
+    Функция получает ids товаров. Cоздает цены на основе переданных 
+    данных об остатках товаров. Разделяет цены на партии по 1000 элементов и 
+    обновляет их.
+
+    Args:
+        watch_remnants (list): Список остатков товаров.
+        client_id (str): id клиента необходимый для аутентификации запроса.
+        seller_token (str): Токен продавца для аутентификации запроса.
+
+    Returns:
+        list: Список всех созданных цен.
+    """
     offer_ids = get_offer_ids(client_id, seller_token)
     prices = create_prices(watch_remnants, offer_ids)
     for some_price in list(divide(prices, 1000)):
@@ -150,6 +354,23 @@ async def upload_prices(watch_remnants, client_id, seller_token):
 
 
 async def upload_stocks(watch_remnants, client_id, seller_token):
+    """Загружает и обновляет остатки товаров для Ozon.
+
+    Функция получает ids товаров, cоздает остаткb товаров, разделяет остатки 
+    на партии по 100 элементов и обновляет их. Фильтрует остатки, оставляя 
+    только те, у которых количество товаров не равно нулю.
+
+    Args:
+        watch_remnants (list): Список остатков товаров.
+        client_id (str): id клиента необходимый для аутентификации запроса.
+        seller_token (str): Токен продавца для аутентификации запроса.
+
+
+    Returns:
+        tuple: Кортеж из двух элементов:
+            not_empty (list): Список остатков с ненулевым количеством товаров.
+            stocks (list): Все остатки товаров, включая нулевые.
+    """
     offer_ids = get_offer_ids(client_id, seller_token)
     stocks = create_stocks(watch_remnants, offer_ids)
     for some_stock in list(divide(stocks, 100)):
