@@ -19,7 +19,7 @@ def get_product_list(page, campaign_id, access_token):
         access_token (str): Токен продавца для аутентификации запроса.
 
     Returns:
-        dict: Словарь с ответом api в формате json.
+        dict: Словарь с ответом api, содержащий список товаров.
 
     Raises:
         HTTPError: Ответ с кодом 4xx или 5xx.
@@ -52,7 +52,7 @@ def update_stocks(stocks, campaign_id, access_token):
         access_token (str): Токен продавца для аутентификации запроса.
     
     Returns:
-        dict: Словарь с ответом api в формате json.
+        dict: Словарь с ответом api с информацией об обновлении остатков.
 
     Raises:
         HTTPError: Ответ с кодом 4xx или 5xx.
@@ -82,7 +82,7 @@ def update_price(prices, campaign_id, access_token):
         access_token (str): Токен продавца для аутентификации запроса.
 
     Returns:
-        dict: Словарь с ответом api в формате json.
+        dict: Словарь с ответом api с информацией об обновлении цен.
 
     Raises:
         HTTPError: Ответ с кодом 4xx или 5xx.

@@ -88,7 +88,7 @@ def update_price(prices: list, client_id, seller_token):
         seller_token (str): Токен продавца для аутентификации запроса.
     
     Returns:
-        dict: Словарь с ответом api в формате json.
+        dict: Словарь с ответом api с информацией об обновлении цен.
 
     Raises:
         HTTPError: Ответ с кодом 4xx или 5xx.
@@ -114,7 +114,7 @@ def update_stocks(stocks: list, client_id, seller_token):
         seller_token (str): Токен продавца для аутентификации запроса.
 
     Returns:
-        dict: Словарь с ответом api в формате json.
+        dict: Словарь с ответом api с информацией об обновлении остатков.
 
     Raises:
         HTTPError: Ответ с кодом 4xx или 5xx.
@@ -291,7 +291,7 @@ def price_conversion(price: str) -> str:
                     символы валют, разделители.
 
     Return:
-        str: Строка, содержащая только цифры.
+        str: Строка, содержащая только цену без валюты и доп символов.
 
     Examples:
         Корректное исполнение:
